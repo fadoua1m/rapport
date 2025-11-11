@@ -1,0 +1,102 @@
+\chapter{Analyse et spécification des besoins}
+
+\section*{Introduction}
+    Ce chapitre sera consacré dans un premier lieu à l’identification des besoins, où nous allons dégager les besoins fonctionnels et non fonctionnels auxquels doit répondre notre solution. Dans un deuxième lieu, nous allons présenter l’architecture de notre système. Enfin, la modélisation de toutes les fonctionnalités, par des diagrammes des cas d’utilisation et un diagramme de séquence, sera traitée.
+
+% Une section
+
+\section{Identification des besoins}
+Dans cette section, nous allons identifier les acteurs de l’application et les différents besoins fonctionnels
+et non fonctionnels de la solution.
+    \subsection{Identification des acteurs du système}
+Un acteur désigne un rôle interagissant directement avec le système. Dans le cadre de ce projet, deux acteurs principaux ont été identifiés : 
+le responsable des ressources humaines (RH), qui supervise la gestion des congés, consulte les informations relatives au personnel et administre le chatbot, et les employés, qui utilisent ce dernier pour soumettre leurs demandes de congés et obtenir des réponses aux questions liées à la réglementation interne de l’entreprise.
+
+    \subsection{Besoins fonctionnels}
+Les besoins fonctionnels décrivent les différentes fonctionnalités que le système doit offrir afin de répondre aux attentes des utilisateurs.  
+Dans le cadre de ce projet, le chatbot RH doit permettre :  
+
+\begin{itemize}[label=$-$]
+    \item La soumission des demandes de congés par les employés via une interface conversationnelle simple et intuitive .
+    \item La gestion et la validation des demandes de congés par le responsable RH ;
+    \item La consultation des informations liées à la réglementation interne de l’entreprise (procédures, politiques de congés, droits, etc.) ;
+    \item La génération de réponses automatiques précises et contextuelles grâce à l’intégration de l’architecture RAG .
+    \item Une interface d’administration permettant au responsable RH de mettre à jour les informations et documents de référence.
+\end{itemize}        
+    % Une deuxième sous section
+    \subsection{Besoins non fonctionnels}
+       Les besoins non fonctionnels définissent les critères de qualité et les contraintes auxquelles le système doit répondre. Pour le chatbot RH, ils incluent :  
+
+\begin{itemize}[label=$-$]
+    \item Performance : le chatbot doit répondre rapidement aux demandes des utilisateurs et traiter les informations sans délai perceptible.
+    \item Sécurité : les données des employés et les informations internes doivent être protégées contre tout accès non autorisé.
+    \item Convivialité : l’interface doit être simple et intuitive afin que les utilisateurs puissent interagir facilement avec le chatbot.
+    \item Fiabilité : le système doit fonctionner de manière stable et continue, sans interruptions inattendues.
+    \item Évolutivité : le chatbot doit pouvoir gérer l’augmentation du nombre d’utilisateurs et des données tout en maintenant ses performances.
+\end{itemize}
+        
+\section{Conception architecturale}
+La conception architecturale de notre système repose sur une architecture hybride combinant traitement de requêtes structurées et recherche sémantique par Retrieval-Augmented Generation (RAG). Cette approche garantit précision et flexibilité dans le traitement des demandes des employés.
+\subsection{Pipeline d'indexation des documents}
+Le processus débute par l'alimentation du système en documents RH. Les responsables RH téléchargent les fichiers via une interface Streamlit dédiée. Ces documents sont ensuite traités selon plusieurs étapes : extraction du contenu textuel, traduction vers l'anglais si nécessaire, découpage en segments, conversion en vecteurs via les modèles sentence-transformers de Hugging Face, et enfin stockage dual dans SupaBase (documents) et Pinecone (vecteurs).
+\subsection{Couche de stockage}
+La couche de stockage repose sur deux composantes complémentaires. SupaBase héberge les documents indexés et leurs métadonnées, tandis que Pinecone stocke les embeddings pour permettre la recherche sémantique rapide.
+\subsection{Traitement des requêtes employés}
+Les employés soumettent leurs questions via l'interface Streamlit. Chaque requête passe par une phase de traitement linguistique (détection et traduction automatique) puis par un classificateur qui détermine le routage approprié.
+Le système oriente ensuite la requête vers deux composants possibles. Pour les demandes structurées (congés, salaires, contrats), l'HR API formule des requêtes SQL pour interroger directement la base de données RH. Pour les questions documentaires (politiques, procédures), le composant RAG effectue une recherche sémantique dans Pinecone et récupère les passages pertinents.
+\subsection{Génération des réponses}
+Les informations récupérées sont transmises au modèle Llama3 qui formule la réponse finale. Cette dernière est ensuite retournée à l'employé via l'interface Streamlit.
+La Figure \ref{fig:architecture} illustre cette architecture hybride qui combine efficacement requêtes structurées et recherche sémantique.
+\begin{figure}[h]
+\centering
+{{\fboxrule=0.5pt\fbox{\includegraphics[width=\columnwidth]{img/architecture.jpg}}}}
+\caption{Architecture du système de chatbot RH}
+\label{fig:architecture}
+\end{figure}
+\section{Choix technologiques}
+Cette section a pour but de fournir une définition brève et concise des différentes technologies et concepts indispensables à la réalisation de ce projet.
+\begin{itemize}[label=$-$]
+    \item \textbf{Streamlit :} est une bibliothèque Python open source lancée en 2018, permettant de créer facilement des applications web interactives uniquement avec Python. Elle est particulièrement adaptée à la réalisation de tableaux de bord, d’applications web basées sur les données, d’outils de reporting et d’interfaces utilisateur interactives, sans nécessiter de connaissances en HTML, CSS ou JavaScript \cite{streamlit_medium}.
+    
+    \begin{figure}[h]
+\centering
+{{\fboxrule=0.5pt\fbox{\includegraphics[width=0.3\columnwidth]{img/Output_displayimages.png}}}}
+\caption{Logo de Streamlit}
+\end{figure}
+
+
+\item \textbf{Langchain :} est un framework open source d’orchestration conçu pour faciliter le développement d’applications utilisant des grands modèles de langage (LLM). Il propose des outils et des composants permettant de connecter ces modèles à différentes sources de données, ce qui rend possible la création de flux de travail complexes et multi-étapes \cite{langchain_google}.
+    \begin{figure}[h]
+\centering
+{{\fboxrule=0.5pt\fbox{\includegraphics[width=0.3\columnwidth]{img/LangChain_Logo.svg.png}}}}
+\caption{Logo de Langchain}
+\end{figure}
+\item \textbf{Llama3 :} est un modèle de langage développé par Meta en 2024. Construit sur l’architecture Transformer, il est spécialement conçu pour analyser et comprendre de grandes quantités de texte. Ce modèle vise à reconnaître des schémas linguistiques complexes et à générer des prédictions précises en s’appuyant sur le contexte fourni \cite{llama}.
+\begin{figure}[h]
+\centering
+{{\fboxrule=0.5pt\fbox{\includegraphics[width=0.2\columnwidth]{img/meta-logo-icon-free-vector.jpg}}}}
+\caption{Logo de Llama3}
+\end{figure}
+
+\item \textbf{Hugging Face} est une plateforme collaborative open source dédiée à l’intelligence artificielle. Elle propose des outils puissants pour la construction, l’entraînement et le déploiement de modèles d’apprentissage automatique. Hugging Face constitue également une communauté active où chercheurs, ingénieurs et passionnés d’IA partagent leurs connaissances, échangent des idées et participent au développement de projets open source \cite{huggingface}.
+\begin{figure}[h]
+\centering
+{{\fboxrule=0.5pt\fbox{\includegraphics[width=0.2\columnwidth]{img/hf-logo.png}}}}
+\caption{Logo de Hugging Face}
+\end{figure}
+
+\item \textbf{SupaBase :} est une plateforme open source qui offre aux développeurs un accès simple et rapide à une base de données PostgreSQL. Conçue pour accélérer le développement d’applications web et mobiles, elle fournit, en plus de la base de données, un ensemble d’outils facilitant la mise à jour, la gestion et l’analyse des données \cite{supabase}.
+\begin{figure}[h]
+\centering
+{{\fboxrule=0.5pt\fbox{\includegraphics[width=0.2\columnwidth]{img/thumb-482e9d6fff2db0af7ec052ddd85e66b0.png}}}}
+\caption{Logo de SupaBase}
+\end{figure}
+
+\item \textbf{Pinecone :} est une base de données vectorielle spécialisée dans la recherche de similarité à grande échelle. Elle offre des performances optimales pour l'indexation et la récupération de vecteurs d'embeddings. Dans ce projet, Pinecone sera utilisé pour stocker les représentations vectorielles des documents RH et effectuer des recherches sémantiques rapides lors du traitement des requêtes employés ;
+
+\item \textbf{Python :} est un langage de programmation reconnu pour sa syntaxe claire et son écosystème riche en bibliothèques de data science et de machine learning. Dans ce projet, Python sera le langage principal pour l'ensemble du backend, incluant le traitement linguistique, la gestion des embeddings et l'orchestration des différents composants du système ;
+
+\end{itemize}
+
+\section*{Conclusion}
+    Conclusion partielle ayant pour objectif de synthétiser le chapitre et d’annoncer le chapitre suivant.
